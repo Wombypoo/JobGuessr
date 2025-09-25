@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess the Occupation Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1c2c 0%, #2a3c54 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Replace the existing mode-buttons styles with these simplified versions */
+        .mode-buttons {
+            position: relative;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 20px auto;
+            z-index: 30;
+        }
+
+        .game-container {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            margin: 1rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        /* Remove these classes as they're no longer needed */
+        /* .mode-buttons.center-screen */
+        /* .mode-buttons.in-game */
+
+        /* Update the chat-area styles */
+        .chat-area {
+            position: relative;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            display: none;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .mode-select {
+            margin-bottom: 1rem;
+        }
+
+        .occupations-grid {
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            z-index: 1;
+            min-height: 100px;
+        }
+
+        .occupations-grid h3 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Made cells smaller */
+            gap: 0.5rem; /* Reduced gap */
+            padding: 0.5rem;
+            width: 100%;
+        }
+
+        .occupation-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 0.8rem; /* Reduced from 1rem */
+            cursor: pointer;
+            transition: transform 0.3s ease, background 0.3s ease;
+            height: 50px; /* Made cards smaller */
+            min-width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            font-size: 0.8rem; /* Smaller font */
+        }
+
+        .occupation-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .occupation-title {
+            font-weight: bold;
+            color: white;
+            z-index: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .occupation-description {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(76, 175, 80, 0.95);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            font-size: 0.7rem; /* Smaller description font */
+            line-height: 1.4;
+            text-align: center;
+            opacity: 0;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .occupation-card.show-description .occupation-title {
+            opacity: 0;
+        }
+
+        .occupation-card.show-description .occupation-description {
+            opacity: 1;
+        }
+
+        .message-error {
+            background: rgba(255, 0, 0, 0.2) !important;
+        }
+
+        .message-system {
+            background: rgba(255, 255, 255, 0.2) !important;
+            font-style: italic;
+        }
+
+        .filter-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 4rem auto 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            z-index: 1;
+            min-height: 50px;
+            margin-top: 20px;  /* Reduced space above filters */
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            min-height: 30px;
+        }
+
+        .tag-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tag-button.active {
+            background: #4CAF50;
+        }
+
+        /* Update the mode-buttons styles */
+        .mode-buttons {
+            position: relative;
+            display: flex;
+            gap: 1rem;
+            transition: all 0.5s ease;
+            /*margin-top : 630px; */ /* Space from top in initial state */
+        }
+
+        /* Center screen position (initial state) */
+        .mode-buttons.center-screen {
+            top: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 31;
+        }
+
+        /* Below chat box position (in-game state) */
+        .mode-buttons.in-game {
+            top: 100%;  /* Position at bottom of chat box */
+            margin-top: 20px;  /* Space below chat box */
+            margin-bottom: 20px;  /* Space above filters */
+        }
+
+        /* Update the game-container styles */
+        .game-container {
+            position: relative;  /* Ensure relative positioning */
+            width: 90%;
+            max-width: 800px;
+            margin: 1rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        /* Add margin to filter container */
+        .filter-container {
+            margin-top: 20px;  /* Reduced space above filters */
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="game-container">
+        <div class="chat-area" id="chatArea">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Type your guess or ask for a hint...">
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+    <input type="hidden" id="levelTag" value="easy">
+        <div class="mode-buttons">
+            <button id="easyBtn">Easy Mode</button>
+            <button id="hardBtn">Hard Mode</button>
+        </div>
+    <div class="filter-container">
+        <h4>Filter by Categories:</h4>
+        <div class="tag-container" id="tagContainer"></div>
+    </div>
+
+    <div class="occupations-grid">
+        <h3>Available Occupations</h3>
+        <div class="grid-container" id="occupationsGrid"></div>
+    </div>
+
+    <script>
+    // Update the API constant
+    const API_BASE = "https://guess-brhjb0bxfed6dyf5.australiaeast-01.azurewebsites.net/api/chatter";
+    let token = null;
+
+    // Add game state management
+    function setGameEnabled(enabled) {
+        document.getElementById('userInput').disabled = !enabled;
+        document.getElementById('sendButton').disabled = !enabled;
+    }
+
+    // Add this to your existing script section
+    // Update the API call function
+    async function callApi(path, body) {
+        try {
+            const res = await fetch(`${API_BASE}/${path}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body || {})
+            });
+            if (!res.ok) {
+                const text = await res.text().catch(() => "");
+                throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+            }
+            return res.json();
+        } catch (e) {
+            addMessage(`Error: ${e.message}`, 'error');
+            return null;
+        }
+    }
+
+    // Fix API constant usage
+    const API = API_BASE;  // Add this line to maintain compatibility
+
+    // Fix the askHint function to use API_BASE
+    async function askHint(message = "tiny hint please") {
+        return await callApi("hint", { 
+            token, 
+            message,
+            meta: { level: levelTag.value }
+        });
+    }
+
+    // Fix the submitGuess function to use API_BASE
+    async function submitGuess(guess) {
+        return await callApi("guess", { 
+            token, 
+            guess,
+            meta: { level: levelTag.value }
+        });
+    }
+
+    // Add level tag functionality
+    const levelTag = document.getElementById('levelTag');
+    document.getElementById('easyBtn').onclick = () => {
+        levelTag.value = 'easy';
+        startGame('easy');
+    };
+    document.getElementById('hardBtn').onclick = () => {
+        levelTag.value = 'hard';
+        startGame('hard');
+    };
+
+    // Update startGame function
+    async function startGame(mode) {
+        const gameContainer = document.querySelector('.game-container');
+        const chatArea = document.querySelector('.chat-area');
+        
+        // Clear any existing messages
+        chatArea.innerHTML = '';
+        
+        addMessage("Starting a new game ... make a guess!", 'system');
+        setGameEnabled(false);
+        token = null;
+        
+        try {
+            const data = await callApi("start", { 
+                mode,
+                meta: { level: levelTag.value }
+            });
+            
+            if (data) {
+                token = data.token;
+                setGameEnabled(true);
+                document.getElementById('userInput').focus();
+            }
+        } catch (e) {
+            addMessage(`Failed to start game: ${e.message}`, 'error');
+        }
+    }
+
+        // Add this new function to handle user input
+        async function handleInput() {
+            if (!token) return;
+            
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            input.value = '';
+
+            addMessage('You: ' + message, 'user');
+
+            try {
+                if (message.toLowerCase().includes('hint')) {
+                    const data = await callApi("hint", { 
+                        token, 
+                        message: "tiny hint please",
+                        meta: { level: levelTag.value }
+                    });
+                    
+                    if (data) {
+                        token = data.token || token;
+                        addMessage('???: ' + data.reply, 'bot');
+                    }
+                } else {
+                    const data = await callApi("guess", { 
+                        token, 
+                        guess: message,
+                        meta: { level: levelTag.value }
+                    });
+                    
+                    if (data) {
+                        if (data.token) token = data.token;
+                        
+                        if (data.result === 'win') {
+                            addMessage(`???: ✅ ${data.reply}`, 'bot');
+                            endGame('win', data.reply);
+                        } else if (data.result === 'lose') {
+                            addMessage(`???: ❌ ${data.reply}`, 'bot');
+                            endGame('lose', data.reply);
+                        } else {
+                            addMessage(`???: ${data.reply} (tries left: ${data.left ?? "?"})`, 'bot');
+                        }
+                    }
+                }
+            } catch (e) {
+                addMessage(`Error: ${e.message}`, 'error');
+            }
+        }
+
+        function addMessage(message, type) {
+            const chatArea = document.getElementById('chatArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.margin = '0.5rem 0';
+            messageDiv.style.padding = '0.5rem';
+            messageDiv.style.borderRadius = '5px';
+            
+            switch(type) {
+                case 'user':
+                    messageDiv.style.background = 'rgba(76, 175, 80, 0.3)';
+                    break;
+                case 'bot':
+                    messageDiv.style.background = 'rgba(33, 150, 243, 0.3)';
+                    break;
+                case 'error':
+                    messageDiv.className = 'message-error';
+                    break;
+                case 'system':
+                    messageDiv.className = 'message-system';
+                    break;
+            }
+            
+            if (message.startsWith('Bot:')) {
+                message = message.replace('Bot:', '???:');
+            }
+            messageDiv.textContent = message;
+            
+            chatArea.appendChild(messageDiv);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Add event listener for Enter key
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleInput();
+            }
+        });
+
+        // Replace your existing occupationsData with this expanded version
+        const occupationsData = {
+            categories: [
+                "Technology & Engineering",
+                "Medical & Healthcare",
+                "Education",
+                "Business & Finance",
+                "Legal & Government",
+                "Trades & Skilled Labour",
+                "Creative & Media",
+                "Aviation & Maritime",
+                "Science & Research",
+                "Hospitality & Food",
+                "Logistics & Transportation",
+                "Real Estate & Property",
+                "Sports & Fitness",
+                "Other"
+            ],
+            jobs: {
+                // Technology & Engineering
+                "software engineer": { description: "Develops computer applications and systems.", tags: ["Technology & Engineering"] },
+                "data scientist": { description: "Analyzes complex data for insights.", tags: ["Technology & Engineering"] },
+                "cloud architect": { description: "Designs cloud computing solutions.", tags: ["Technology & Engineering"] },
+                "devops engineer": { description: "Manages and automates infrastructure and deployments.", tags: ["Technology & Engineering"] },
+                "web developer": { description: "Builds and maintains websites.", tags: ["Technology & Engineering"] },
+                "mobile app developer": { description: "Creates applications for mobile devices.", tags: ["Technology & Engineering"] },
+                "database administrator": { description: "Manages and organizes data using database management systems.", tags: ["Technology & Engineering"] },
+                "network engineer": { description: "Designs and implements computer networks.", tags: ["Technology & Engineering"] },
+                "security analyst": { description: "Protects systems and networks from cyber threats.", tags: ["Technology & Engineering"] },
+                "system administrator": { description: "Maintains and configures computer systems and servers.", tags: ["Technology & Engineering"] },
+                // Medical & Healthcare
+                "nurse": { description: "Provides patient care and medical support in healthcare settings.", tags: ["Medical & Healthcare"] },
+                "doctor": { description: "Diagnoses and treats medical conditions.", tags: ["Medical & Healthcare"] },
+                "physiotherapist": { description: "Helps patients improve movement and manage pain.", tags: ["Medical & Healthcare"] },
+                "occupational therapist": { description: "Assists patients in developing, recovering, and improving daily living skills.", tags: ["Medical & Healthcare"] },
+                "speech therapist": { description: "Helps patients with speech, language, and communication disorders.", tags: ["Medical & Healthcare"] },
+                "radiologist": { description: "Examines medical images to diagnose conditions.", tags: ["Medical & Healthcare"] },
+                "surgeon": { description: "Performs operations to treat injuries, diseases, and deformities.", tags: ["Medical & Healthcare"] },
+                "dentist": { description: "Diagnoses and treats problems affecting oral health.", tags: ["Medical & Healthcare"] },
+                "pharmacist": { description: "Dispenses medications and advises on their safe use.", tags: ["Medical & Healthcare"] },
+                "veterinarian": { description: "Provides medical care for animals.", tags: ["Medical & Healthcare"] },
+                // Education
+                "teacher": { description: "Educates students and facilitates learning in schools.", tags: ["Education"] },
+                "professor": { description: "Teaches at the university level and conducts research.", tags: ["Education"] },
+                "lecturer": { description: "Delivers lectures and provides guidance to students.", tags: ["Education"] },
+                "tutor": { description: "Provides individual or small group instruction.", tags: ["Education"] },
+                "librarian": { description: "Manages library resources and assists with research.", tags: ["Education"] },
+                "counselor": { description: "Provides guidance and support to students.", tags: ["Education"] },
+                // Business & Finance
+                "accountant": { description: "Manages financial records and transactions for organizations.", tags: ["Business & Finance"] },
+                "auditor": { description: "Examines financial records to ensure accuracy and compliance.", tags: ["Business & Finance"] },
+                "financial analyst": { description: "Analyzes financial data to support decision-making.", tags: ["Business & Finance"] },
+                "marketing specialist": { description: "Develops and implements marketing strategies.", tags: ["Business & Finance"] },
+                "sales representative": { description: "Sells products or services to customers.", tags: ["Business & Finance"] },
+                "business analyst": { description: "Analyzes business processes and identifies improvements.", tags: ["Business & Finance"] },
+                "project manager": { description: "Plans, executes, and closes projects.", tags: ["Business & Finance"] },
+                // Legal & Government
+                "lawyer": { description: "Provides legal advice and represents clients in legal matters.", tags: ["Legal & Government"] },
+                "judge": { description: "Presides over court proceedings and makes legal decisions.", tags: ["Legal & Government"] },
+                "police officer": { description: "Enforces laws and maintains public order.", tags: ["Legal & Government"] },
+                "firefighter": { description: "Responds to fires and other emergencies to protect lives.", tags: ["Legal & Government"] },
+                "paramedic": { description: "Provides emergency medical care in crisis situations.", tags: ["Medical & Healthcare"] },
+                "social worker": { description: "Helps people cope with and solve problems in their lives.", tags: ["Legal & Government"] },
+                // Trades & Skilled Labour
+                "plumber": { description: "Installs and repairs water and gas systems in buildings.", tags: ["Trades & Skilled Labour"] },
+                "electrician": { description: "Installs and maintains electrical systems and wiring.", tags: ["Trades & Skilled Labour"] },
+                "carpenter": { description: "Constructs and repairs building frameworks and structures.", tags: ["Trades & Skilled Labour"] },
+                "mason": { description: "Works with bricks, stones, and other materials to build structures.", tags: ["Trades & Skilled Labour"] },
+                "welder": { description: "Joins metal parts together using heat.", tags: ["Trades & Skilled Labour"] },
+                "mechanic": { description: "Repairs and maintains vehicles and machinery.", tags: ["Trades & Skilled Labour"] },
+                // Creative & Media
+                "graphic designer": { description: "Creates visual content for digital and print media.", tags: ["Creative & Media"] },
+                "photographer": { description: "Captures and processes images for various purposes.", tags: ["Creative & Media"] },
+                "videographer": { description: "Records and edits video footage.", tags: ["Creative & Media"] },
+                "musician": { description: "Creates and performs music professionally.", tags: ["Creative & Media"] },
+                "writer": { description: "Writes articles, books, and other content.", tags: ["Creative & Media"] },
+                "editor": { description: "Edits and proofreads content for publication.", tags: ["Creative & Media"] },
+                // Aviation & Maritime
+                "pilot": { description: "Operates aircraft for commercial or private flights.", tags: ["Aviation & Maritime"] },
+                "flight attendant": { description: "Ensures passenger safety and comfort during flights.", tags: ["Aviation & Maritime"] },
+                "air traffic controller": { description: "Coordinates the movement of aircraft to ensure safety.", tags: ["Aviation & Maritime"] },
+                "marine engineer": { description: "Designs and maintains ships and other marine vessels.", tags: ["Aviation & Maritime"] },
+                // Science & Research
+                "research scientist": { description: "Conducts experiments and studies to advance knowledge.", tags: ["Science & Research"] },
+                "lab technician": { description: "Performs tests and analyses in a laboratory setting.", tags: ["Science & Research"] },
+                "clinical researcher": { description: "Studies and tests new drugs and treatments.", tags: ["Science & Research"] },
+                // Hospitality & Food
+                "chef": { description: "Creates and prepares meals in restaurants or other food service settings.", tags: ["Hospitality & Food"] },
+                "barista": { description: "Prepares and serves coffee drinks and light refreshments.", tags: ["Hospitality & Food"] },
+                "waiter": { description: "Takes orders and serves food and drinks to customers.", tags: ["Hospitality & Food"] },
+                "bartender": { description: "Mixes and serves drinks in bars and restaurants.", tags: ["Hospitality & Food"] },
+                // Logistics & Transportation
+                "truck driver": { description: "Drives trucks to transport goods and materials.", tags: ["Logistics & Transportation"] },
+                "warehouse worker": { description: "Manages and organizes inventory in a warehouse.", tags: ["Logistics & Transportation"] },
+                "logistics coordinator": { description: "Coordinates and manages the supply chain and logistics operations.", tags: ["Logistics & Transportation"] },
+                // Real Estate & Property
+                "real estate agent": { description: "Helps clients buy, sell, and rent properties.", tags: ["Business & Finance", "Real Estate & Property"] },
+                "property manager": { description: "Manages residential or commercial properties.", tags: ["Business & Finance", "Real Estate & Property"] },
+                // Sports & Fitness
+                "fitness trainer": { description: "Guides people in exercise and healthy lifestyle habits.", tags: ["Sports & Fitness"] },
+                "sports coach": { description: "Trains and develops athletes in a specific sport.", tags: ["Sports & Fitness"] },
+                // Other
+                "data analyst": { description: "Interprets and analyzes data to provide business insights.", tags: ["Business & Finance"] },
+                "business consultant": { description: "Provides expert advice to improve business performance.", tags: ["Business & Finance"] },
+                "event planner": { description: "Plans and coordinates events such as weddings, conferences, and parties.", tags: ["Business & Finance"] },
+                "interior designer": { description: "Plans and designs interior spaces for functionality and aesthetics.", tags: ["Creative & Media"] },
+                "ux/ui designer": { description: "Designs user interfaces and experiences for websites and applications.", tags: ["Creative & Media"] },
+                "copywriter": { description: "Writes persuasive and engaging content for advertising and marketing.", tags: ["Creative & Media"] },
+                "translator": { description: "Translates written content from one language to another.", tags: ["Creative & Media"] },
+                "data entry clerk": { description: "Enters and manages data in computer systems.", tags: ["Administrative"] },
+                "administrative assistant": { description: "Provides administrative support and manages office tasks.", tags: ["Administrative"] },
+                "customer service representative": { description: "Handles customer inquiries and provides assistance.", tags: ["Administrative"] },
+                "receptionist": { description: "Greets visitors and manages front desk operations.", tags: ["Administrative"] },
+                "it support specialist": { description: "Provides technical support and troubleshooting for computer systems.", tags: ["Technology & Engineering"] },
+                "help desk technician": { description: "Provides customer support for technical issues.", tags: ["Technology & Engineering"] },
+                "network administrator": { description: "Manages and maintains computer networks.", tags: ["Technology & Engineering"] },
+                "system analyst": { description: "Analyzes and designs information systems to meet business needs.", tags: ["Technology & Engineering"] },
+                "business intelligence analyst": { description: "Analyzes data to provide business insights and support decision-making.", tags: ["Business & Finance"] },
+                "market research analyst": { description: "Studies market conditions to examine potential sales of a product or service.", tags: ["Business & Finance"] },
+                "public relations specialist": { description: "Manages and directs public relations activities.", tags: ["Business & Finance"] },
+                "advertising manager": { description: "Plans and manages advertising campaigns.", tags: ["Business & Finance"] },
+                "brand manager": { description: "Develops and manages brand strategies and initiatives.", tags: ["Business & Finance"] },
+                "product manager": { description: "Guides the development and launch of products.", tags: ["Business & Finance"] },
+                "supply chain manager": { description: "Manages and optimizes the supply chain and logistics operations.", tags: ["Logistics & Transportation"] },
+                "operations manager": { description: "Oversees and manages daily operations in an organization.", tags: ["Business & Finance"] },
+                "quality assurance analyst": { description: "Ensures the quality and functionality of products or services.", tags: ["Technology & Engineering"] },
+                "compliance officer": { description: "Ensures adherence to laws, regulations, and internal policies.", tags: ["Legal & Government"] },
+                "risk manager": { description: "Identifies and mitigates risks that could impact the organization.", tags: ["Business & Finance"] },
+                "environmental scientist": { description: "Studies and protects the environment and public health.", tags: ["Science & Research"] },
+                "biochemist": { description: "Studies the chemical processes and substances in living organisms.", tags: ["Science & Research"] },
+                "microbiologist": { description: "Studies microorganisms and their effects on humans, animals, plants, and the environment.", tags: ["Science & Research"] },
+                "genetic counselor": { description: "Provides information and support to individuals regarding genetic conditions.", tags: ["Medical & Healthcare"] },
+                "clinical psychologist": { description: "Diagnoses and treats mental health disorders.", tags: ["Medical & Healthcare"] },
+                "psychiatrist": { description: "Treats mental health conditions with therapy and medication.", tags: ["Medical & Healthcare"] },
+                "anesthesiologist": { description: "Administers anesthesia and monitors patients during surgery.", tags: ["Medical & Healthcare"] },
+                "emergency medical technician": { description: "Provides emergency medical care and transportation.", tags: ["Medical & Healthcare"] },
+                "nurse practitioner": { description: "Provides advanced nursing care and can prescribe medications.", tags: ["Medical & Healthcare"] },
+                "physician assistant": { description: "Provides healthcare services under the supervision of a physician.", tags: ["Medical & Healthcare"] },
+                "chiropractor": { description: "Diagnoses and treats musculoskeletal disorders, especially back pain.", tags: ["Medical & Healthcare"] },
+                "podiatrist": { description: "Diagnoses and treats foot, ankle, and lower leg disorders.", tags: ["Medical & Healthcare"] },
+                "optometrist": { description: "Provides vision care, including eye exams and prescribing glasses.", tags: ["Medical & Healthcare"] },
+                "dermatologist": { description: "Diagnoses and treats skin conditions.", tags: ["Medical & Healthcare"] },
+                "radiation therapist": { description: "Administers radiation treatments to patients.", tags: ["Medical & Healthcare"] },
+                "respiratory therapist": { description: "Provides respiratory care and treatment for patients with breathing difficulties.", tags: ["Medical & Healthcare"] },
+                "occupational health and safety specialist": { description: "Ensures workplace safety and compliance with health regulations.", tags: ["Legal & Government"] },
+                "environmental health and safety officer": { description: "Oversees environmental health and safety programs and ensures compliance.", tags: ["Legal & Government"] },
+                "fire inspector": { description: "Inspects buildings and facilities to ensure fire safety compliance.", tags: ["Legal & Government"] },
+                "building inspector": { description: "Inspects construction and renovation work to ensure compliance with building codes.", tags: ["Legal & Government"] },
+                "zoning specialist": { description: "Reviews and approves land use and zoning applications.", tags: ["Legal & Government"] },
+                "urban planner": { description: "Develops plans and programs for land use in urban areas.", tags: ["Legal & Government"] },
+                "transportation planner": { description: "Plans and designs transportation systems and infrastructure.", tags: ["Logistics & Transportation"] },
+                "logistics analyst": { description: "Analyzes and optimizes logistics operations and supply chain processes.", tags: ["Logistics & Transportation"] },
+                "procurement specialist": { description: "Manages purchasing of goods and services for an organization.", tags: ["Business & Finance"] },
+                "inventory manager": { description: "Oversees inventory control and management.", tags: ["Logistics & Transportation"] },
+                "warehouse manager": { description: "Manages and oversees warehouse operations.", tags: ["Logistics & Transportation"] },
+                "distribution manager": { description: "Oversees the distribution of goods and materials.", tags: ["Logistics & Transportation"] },
+                "fleet manager": { description: "Manages a fleet of vehicles used for transportation of goods or people.", tags: ["Logistics & Transportation"] },
+                "supply chain analyst": { description: "Analyzes and improves supply chain processes and performance.", tags: ["Logistics & Transportation"] },
+                "operations analyst": { description: "Analyzes and improves operational processes and performance.", tags: ["Business & Finance"] },
+                "business operations manager": { description: "Oversees and manages business operations and processes.", tags: ["Business & Finance"] },
+                "strategic planner": { description: "Develops and implements strategic plans and initiatives.", tags: ["Business & Finance"] },
+                "change manager": { description: "Manages and implements organizational change initiatives.", tags: ["Business & Finance"] },
+                "training and development manager": { description: "Plans and oversees training and development programs.", tags: ["Business & Finance"] },
+                "recruitment consultant": { description: "Provides recruitment and staffing solutions.", tags: ["Business & Finance"] },
+                "hr manager": { description: "Manages human resources functions and personnel management.", tags: ["Business & Finance"] },
+                "compensation and benefits manager": { description: "Plans and manages employee compensation and benefits programs.", tags: ["Business & Finance"] },
+                "employee relations manager": { description: "Manages employee relations and resolves workplace issues.", tags: ["Business & Finance"] },
+                "organizational development consultant": { description: "Advises on organizational structure, culture, and development.", tags: ["Business & Finance"] },
+                "business process analyst": { description: "Analyzes and improves business processes and workflows.", tags: ["Business & Finance"] },
+                "quality manager": { description: "Ensures products or services meet quality standards and regulations.", tags: ["Technology & Engineering"] },
+                "safety manager": { description: "Develops and implements safety policies and procedures.", tags: ["Legal & Government"] },
+                "environmental manager": { description: "Oversees environmental protection and sustainability initiatives.", tags: ["Legal & Government"] },
+                "regulatory affairs specialist": { description: "Ensures compliance with regulations and standards.", tags: ["Legal & Government"] },
+                "patent examiner": { description: "Reviews and approves patent applications.", tags: ["Legal & Government"] },
+                "trademark attorney": { description: "Handles trademark registration and protection.", tags: ["Legal & Government"] },
+                "copyright lawyer": { description: "Specializes in copyright law and intellectual property rights.", tags: ["Legal & Government"] },
+                "legal consultant": { description: "Provides expert legal advice and services.", tags: ["Legal & Government"] },
+                "arbitrator": { description: "Hears and decides disputes outside of courts.", tags: ["Legal & Government"] },
+                "mediator": { description: "Facilitates negotiation and settlement between parties.", tags: ["Legal & Government"] },
+                "ombudsman": { description: "Investigates and resolves complaints against government agencies.", tags: ["Legal & Government"] },
+                "public policy analyst": { description: "Researches and analyzes public policies and programs.", tags: ["Legal & Government"] },
+                "legislative assistant": { description: "Assists in the development and analysis of legislation.", tags: ["Legal & Government"] },
+                "campaign manager": { description: "Plans and manages political campaigns.", tags: ["Legal & Government"] },
+                "lobbyist": { description: "Advocates for specific legislation or policies.", tags: ["Legal & Government"] },
+                "political consultant": { description: "Advises on political strategy and communication.", tags: ["Legal & Government"] },
+                "government affairs director": { description: "Manages government relations and advocacy efforts.", tags: ["Legal & Government"] },
+                "community service manager": { description: "Oversees and coordinates community service programs.", tags: ["Legal & Government"] },
+                "nonprofit manager": { description: "Manages and directs nonprofit organizations.", tags: ["Legal & Government"] },
+                "fundraising manager": { description: "Plans and manages fundraising campaigns and events.", tags: ["Legal & Government"] },
+                "grant writer": { description: "Writes proposals to secure funding from government and private sources.", tags: ["Legal & Government"] },
+                "philanthropy advisor": { description: "Advises on charitable giving and philanthropy strategies.", tags: ["Legal & Government"] },
+                "corporate social responsibility manager": { description: "Develops and manages CSR strategies and initiatives.", tags: ["Legal & Government"] },
+                "sustainability consultant": { description: "Advises on sustainability practices and environmental impact.", tags: ["Legal & Government"] }
+            }
+        };
+
+        // Add this debug function right after your occupationsData declaration
+        function debugVisibility() {
+            const filterContainer = document.querySelector('.filter-container');
+            const tagContainer = document.querySelector('.tag-container');
+            const occupationsGrid = document.querySelector('.occupations-grid');
+            const gridContainer = document.querySelector('.grid-container');
+            
+            console.log('Filter container:', {
+                display: filterContainer?.style.display,
+                visibility: filterContainer?.style.visibility,
+                height: filterContainer?.offsetHeight
+            });
+            
+            console.log('Tag container:', {
+                display: tagContainer?.style.display,
+                visibility: tagContainer?.style.visibility,
+                children: tagContainer?.children.length
+            });
+            
+            console.log('Occupations grid:', {
+                display: occupationsGrid?.style.display,
+                visibility: occupationsGrid?.style.visibility,
+                height: occupationsGrid?.offsetHeight
+            });
+            
+            console.log('Grid container:', {
+                display: gridContainer?.style.display,
+                children: gridContainer?.children.length
+            });
+        }
+
+        // Modify createTagButtons to include error checking
+        function createTagButtons() {
+            const container = document.getElementById('tagContainer');
+            if (!container) {
+                console.error('Tag container not found');
+                return;
+            }
+            
+            if (!occupationsData.categories || !occupationsData.categories.length) {
+                console.error('No categories found');
+                return;
+            }
+            
+            container.innerHTML = ''; // Clear existing content
+            
+            occupationsData.categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'tag-button';
+                button.textContent = category;
+                button.onclick = () => toggleFilter(category, button);
+                container.appendChild(button);
+            });
+            
+            console.log(`Created ${occupationsData.categories.length} filter buttons`);
+        }
+
+        function createOccupationsList() {
+            const container = document.getElementById('occupationsGrid');
+            Object.entries(occupationsData.jobs).forEach(([occupation, { description }]) => {
+                const card = document.createElement('div');
+                card.className = 'occupation-card';
+                card.innerHTML = `
+                    <div class="occupation-title">${occupation.replace(/\\w/, (c) => c.toUpperCase())}</div>
+                    <div class="occupation-description">${description}</div>
+                `;
+                
+                // Toggle description on click
+                card.addEventListener('click', () => {
+                    card.classList.toggle('show-description');
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        // Add these functions to your script section
+
+        let activeFilters = new Set();
+
+        function createTagButtons() {
+            const container = document.getElementById('tagContainer');
+            if (!container) {
+                console.error('Tag container not found');
+                return;
+            }
+            
+            if (!occupationsData.categories || !occupationsData.categories.length) {
+                console.error('No categories found');
+                return;
+            }
+            
+            container.innerHTML = ''; // Clear existing content
+            
+            occupationsData.categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'tag-button';
+                button.textContent = category;
+                button.onclick = () => toggleFilter(category, button);
+                container.appendChild(button);
+            });
+            
+            console.log(`Created ${occupationsData.categories.length} filter buttons`);
+        }
+
+        function toggleFilter(category, button) {
+            if (activeFilters.has(category)) {
+                activeFilters.delete(category);
+                button.classList.remove('active');
+            } else {
+                activeFilters.add(category);
+                button.classList.add('active');
+            }
+            updateOccupationsList(); // Make sure this is called
+        }
+
+        function updateOccupationsList() {
+            const container = document.getElementById('occupationsGrid');
+            if (!container) {
+                console.error('Occupations grid container not found');
+                return;
+            }
+            
+            container.innerHTML = '';
+            let count = 0;
+            
+            Object.entries(occupationsData.jobs).forEach(([job, data]) => {
+                if (activeFilters.size === 0 || data.tags.some(tag => activeFilters.has(tag))) {
+                    const card = document.createElement('div');
+                    card.className = 'occupation-card';
+                    card.innerHTML = `
+                        <div class="occupation-title">${job}</div>
+                        <div class="occupation-description">${data.description}</div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('show-description');
+                    });
+
+                    container.appendChild(card);
+                    count++;
+                }
+            });
+            
+            console.log(`Added ${count} occupation cards to the grid`);
+            debugVisibility();
+        }
+
+        // Update window.onload function
+        window.onload = function() {
+            // Create filter buttons first
+            createTagButtons();
+            
+            // Then update the occupations list
+            updateOccupationsList();
+            
+            // Make sure containers are visible
+            document.querySelector('.filter-container').style.display = 'block';
+            document.querySelector('.occupations-grid').style.display = 'block';
+            
+            // Set up event handlers
+            document.getElementById('easyBtn').onclick = () => {
+                levelTag.value = 'easy';
+                startGame('easy');
+            };
+            
+            document.getElementById('hardBtn').onclick = () => {
+                levelTag.value = 'hard';
+                startGame('hard');
+            };
+            
+            document.getElementById('sendButton').onclick = handleInput;
+            document.getElementById('userInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleInput();
+                }
+            });
+            
+            setGameEnabled(false);
+        }
+
+        // Update the updateOccupationsList function to include logging
+        function updateOccupationsList() {
+            const container = document.getElementById('occupationsGrid');
+            if (!container) {
+                console.error('Occupations grid container not found');
+                return;
+            }
+            
+            container.innerHTML = '';
+            let count = 0;
+            
+            Object.entries(occupationsData.jobs).forEach(([job, data]) => {
+                if (activeFilters.size === 0 || data.tags.some(tag => activeFilters.has(tag))) {
+                    const card = document.createElement('div');
+                    card.className = 'occupation-card';
+                    card.innerHTML = `
+                        <div class="occupation-title">${job}</div>
+                        <div class="occupation-description">${data.description}</div>
+                    `;
+                    
+                    card.addEventListener('click', () => {
+                        card.classList.toggle('show-description');
+                    });
+
+                    container.appendChild(card);
+                    count++;
+                }
+            });
+            
+            console.log(`Added ${count} occupation cards to the grid`);
+        }
+
+        // Update the endGame function
+        function endGame(result, message) {
+            const chatArea = document.querySelector('.chat-area');
+            
+            setTimeout(() => {
+                chatArea.innerHTML = '';
+                setGameEnabled(false);
+                token = null;
+            }, 2000); // Show result for 2 seconds before clearing
+        }
+    </script>
+</body>
+</html>
